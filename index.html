@@ -11,13 +11,13 @@
 
     <style>
         :root {
-            --void-bg: #f7f7f5; --ink-deep: #0a0a0a; --ink-light: #666; --cinnabar: #c23838; --gold: #bfa46f;
+            --void-bg: #f7f7f5; --ink-deep: #0a0a0a; --ink-light: #555; --cinnabar: #c23838; --gold: #bfa46f;
             --font-art: 'Ma Shan Zheng', cursive; --font-body: 'Noto Serif SC', serif;
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body, html { margin: 0; padding: 0; background: var(--void-bg); overflow: hidden; height: 100%; cursor: none; }
 
-        /* --- 意境层 --- */
+        /* --- 意境氛围 --- */
         .ambient-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; background: radial-gradient(circle at 50% 50%, #fff 0%, #f0f0eb 100%); }
         .noise { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; opacity: 0.03; pointer-events: none; background: url('https://www.transparenttextures.com/patterns/stardust.png'); }
         .fog { position: absolute; border-radius: 50%; background: #fff; filter: blur(60px); opacity: 0.5; animation: breathe 10s infinite ease-in-out; }
@@ -33,33 +33,58 @@
         .main-scroll::-webkit-scrollbar { display: none; }
         .section { height: 100vh; width: 100%; scroll-snap-align: center; display: flex; justify-content: center; align-items: center; position: relative; }
         .hero-text { writing-mode: vertical-rl; font-family: var(--font-art); font-size: 8.5vh; font-weight: 900; letter-spacing: 0.25em; color: var(--ink-deep); position: relative; cursor: pointer; z-index: 20; transition: 0.5s; }
-        .hero-text:hover { color: var(--cinnabar); transform: scale(1.02); }
-        .fate-mark { position: absolute; top: 22%; left: 55%; writing-mode: vertical-rl; font-family: var(--font-body); font-size: 0.85rem; font-weight: 700; color: var(--ink-light); border-top: 2px solid var(--cinnabar); padding-top: 10px; opacity: 0; }
+        .hero-text:hover { color: var(--cinnabar); }
 
-        /* --- 二级长卷 --- */
+        /* --- 长卷阅读器 (核心修复区) --- */
         .void-realm { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 1000; clip-path: inset(0 0 100% 0); transition: clip-path 1.2s cubic-bezier(0.77, 0, 0.175, 1); }
         .void-realm.active { clip-path: inset(0 0 0 0); }
         .infinite-track { display: flex; height: 100%; width: 100%; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; cursor: grab; background: linear-gradient(90deg, #fff 0%, #fdfbf6 100%); }
         
         .content-card { flex-shrink: 0; height: 100%; min-width: 60vw; display: flex; align-items: center; writing-mode: vertical-rl; padding: 0 4vw; box-sizing: border-box; border-right: 1px dashed rgba(0,0,0,0.03); }
-        .article-title { font-family: var(--font-body); font-size: 3.2rem; font-weight: 900; margin-left: 35px; border-left: 5px solid var(--cinnabar); padding-left: 18px; color: #111; text-orientation: upright; }
-        .article-body { font-family: var(--font-body); font-size: 1.25rem; line-height: 2.4; font-weight: 600; color: #222; text-align: justify; height: 65vh; column-fill: auto; margin-left: 35px; white-space: pre-wrap; letter-spacing: 0.05em; text-orientation: upright; }
+        
+        /* 强制竖正：不仅针对容器，针对所有子元素 */
+        .article-title { 
+            font-family: var(--font-body); font-size: 3.2rem; font-weight: 900; 
+            margin-left: 35px; border-left: 5px solid var(--cinnabar); 
+            padding-left: 18px; color: #111; 
+            writing-mode: vertical-rl; text-orientation: upright !important; 
+        }
 
-        /* 题跋样式 (Colophon) */
+        .article-body { 
+            font-family: var(--font-body); font-size: 1.25rem; line-height: 2.4; 
+            font-weight: 700; color: #222; text-align: justify; height: 65vh; 
+            column-fill: auto; margin-left: 35px; white-space: pre-wrap; 
+            letter-spacing: 0.05em; 
+            writing-mode: vertical-rl; text-orientation: upright !important; 
+        }
+
+        /* 题跋升级：增加朱砂小印引导 */
+        .colophon-wrap {
+            margin-left: 60px; height: 50vh; display: flex; flex-direction: row; 
+            writing-mode: vertical-rl; border-right: 1px solid #eee; padding-right: 15px;
+        }
+        .colophon-seal {
+            width: 14px; height: 14px; background: var(--cinnabar); 
+            margin-bottom: 10px; display: inline-block;
+        }
         .article-colophon {
-            font-family: var(--font-body); font-size: 0.95rem; line-height: 2; font-weight: 400; color: #888;
-            margin-left: 50px; height: 50vh; opacity: 0.8; writing-mode: vertical-rl; text-orientation: upright;
-            border-right: 1px solid #eee; padding-right: 15px;
+            font-family: var(--font-body); font-size: 1rem; line-height: 2; 
+            font-weight: 500; color: #777; opacity: 0.9;
+            text-orientation: upright !important;
         }
 
         .gallery-frame { max-height: 55vh; max-width: 70vw; width: auto; box-shadow: 15px 15px 50px rgba(0,0,0,0.1); border: 10px solid #fff; outline: 1px solid #eee; margin: 0 40px; object-fit: contain; background: #000; }
-        .logic-node { border: 2.5px solid var(--gold); background: rgba(191, 164, 111, 0.08); padding: 50px 30px; margin: 0 50px; position: relative; }
-        .logic-formula { font-family: 'Courier New', monospace; font-size: 1.3rem; color: var(--ink-deep); font-weight: 900; text-orientation: upright; }
+        
+        /* 阵法公式：极致强化 */
+        .logic-node { border: 2.5px solid var(--gold); background: rgba(191, 164, 111, 0.08); padding: 50px 30px; margin: 0 50px; position: relative; writing-mode: vertical-rl; }
+        .logic-formula { 
+            font-family: 'Courier New', monospace; font-size: 1.3rem; 
+            color: var(--ink-deep); font-weight: 900; 
+            text-orientation: upright !important; 
+        }
 
-        /* UI 组件 */
+        /* UI 入口 */
         .spirit-dot { position: fixed; bottom: 40px; left: 40px; width: 14px; height: 14px; background: var(--cinnabar); border-radius: 50%; z-index: 3000; cursor: pointer; animation: pulse-red 3s infinite; }
-        .gatekeeper-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.98); z-index: 6000; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: 0.6s; }
-        .gatekeeper-modal.active { opacity: 1; pointer-events: auto; }
         .admin-glass { position: fixed; bottom: 0; left: 0; width: 100%; height: 0; background: #fff; z-index: 5000; transition: 0.6s cubic-bezier(0.19, 1, 0.22, 1); overflow: hidden; border-radius: 30px 30px 0 0; }
         .admin-glass.open { height: 85vh; }
         .form-wrap { padding: 40px; max-width: 600px; margin: 0 auto; font-family: var(--font-body); }
@@ -69,7 +94,7 @@
         .close-realm { position: fixed; top: 35px; right: 35px; font-size: 2rem; color: #ccc; cursor: pointer; z-index: 2001; opacity: 0; }
         .void-realm.active .close-realm { opacity: 1; }
 
-        @media screen and (max-width: 768px) { .content-card { min-width: 90vw; } .article-title { font-size: 2.2rem; margin-left: 20px; } .article-body { font-size: 1.1rem; margin-left: 20px; } .article-colophon { display: none; } /* 移动端隐藏题跋以保简洁 */ }
+        @media screen and (max-width: 768px) { .content-card { min-width: 90vw; } .article-title { font-size: 2.2rem; margin-left: 15px; } .article-body { font-size: 1.1rem; margin-left: 15px; } .colophon-wrap { display: none; } }
     </style>
 </head>
 <body>
@@ -79,9 +104,9 @@
 
     <div class="spirit-dot" onclick="checkPermission()"></div>
 
-    <div class="gatekeeper-modal" id="gateModal">
+    <div class="gatekeeper-modal" id="gateModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.98); z-index:6000; display:none; align-items:center; justify-content:center;">
         <div style="text-align:center; font-family:var(--font-body);">
-            <h2 style="font-family:var(--font-art); font-size:2.5rem; font-weight:normal; margin:0;">太虚禁地</h2>
+            <h2 style="font-family:var(--font-art); font-size:2.5rem; font-weight:normal;">太虚禁地</h2>
             <input type="password" id="gatePass" style="border:none; border-bottom:2px solid #000; font-size:2rem; width:180px; text-align:center; background:transparent; outline:none; margin-top:30px; font-family:var(--font-art);" placeholder="口令">
             <button onclick="verifyPass()" class="minimal-btn" style="margin-top:40px; width:auto; padding:10px 40px;">入 阵</button>
             <div onclick="closeGate()" style="margin-top:25px; cursor:pointer; color:#999; font-size:0.9rem;">离去</div>
@@ -97,15 +122,15 @@
                 <option value="chisong">其三：赤松遗风</option>
             </select>
             <select id="pType" class="minimal-input" onchange="toggleFields()">
-                <option value="article">文章 (宋体加粗)</option>
-                <option value="image">图文 (画轴裱装)</option>
-                <option value="video">留影 (动态影像)</option>
-                <option value="logic">阵法 (竖排公式)</option>
+                <option value="article">体裁：文章 (宋体加粗)</option>
+                <option value="image">体裁：图文 (画轴裱装)</option>
+                <option value="video">体裁：留影 (动态影像)</option>
+                <option value="logic">体裁：阵法 (竖排公式)</option>
             </select>
             <input id="pTitle" class="minimal-input" placeholder="标题 / Title">
             <input id="pMedia" class="minimal-input" placeholder="媒体链接 (URL)">
-            <textarea id="pBody" class="minimal-input" rows="3" placeholder="正文内容"></textarea>
-            <textarea id="pColophon" class="minimal-input" rows="2" placeholder="题跋 (侧笔小楷，可选)"></textarea>
+            <textarea id="pBody" class="minimal-input" rows="3" placeholder="正文内容 / 正文中的英文数字将强制直立"></textarea>
+            <textarea id="pColophon" class="minimal-input" rows="2" placeholder="题跋 (侧位批注)"></textarea>
             <button class="minimal-btn" onclick="publish()">同步至经变图</button>
             <div style="margin-top:20px; text-align:center; color:#999; cursor:pointer;" onclick="toggleAdmin()">收起法简</div>
         </div>
@@ -120,22 +145,19 @@
         <section class="section">
             <svg class="bg-seal" viewBox="0 0 100 100"><rect x="20" y="20" width="60" height="60" transform="rotate(45 50 50)" /></svg>
             <div class="hero-text" onclick="enterRealm('wangwu')">王屋洞天</div>
-            <div class="fate-mark" id="f1"></div>
         </section>
         <section class="section">
             <svg class="bg-seal" viewBox="0 0 100 100"><circle cx="50" cy="50" r="35" /></svg>
             <div class="hero-text" onclick="enterRealm('weiyu')">委羽山洞</div>
-            <div class="fate-mark" id="f2"></div>
         </section>
         <section class="section">
             <svg class="bg-seal" viewBox="0 0 100 100"><path d="M10,90 L50,10 L90,90 Z" /></svg>
             <div class="hero-text" onclick="enterRealm('chisong')">赤松遗风</div>
-            <div class="fate-mark" id="f3"></div>
         </section>
     </div>
 
     <script>
-        // --- 请在此填入你的 Supabase URL 和 Key ---
+        // --- 请填入你的 Supabase Key ---
         const SUPABASE_URL = 'https://mctqfattznybghuobqum.supabase.co'; 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jdHFmYXR0em55YmdodW9icXVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3NjUwMDQsImV4cCI6MjA4NzM0MTAwNH0.ma30ugPfjQWmQUELCOiRxc0bI_w0ky-yGykhrzIdefQ';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -161,14 +183,19 @@
                     else if (item.type === 'image') inner = `<img src="${item.media}" class="gallery-frame"><div class="article-body">${item.body}</div>`;
                     else inner = `<div class="article-body">${item.body}</div>`;
 
-                    // 增加题跋渲染逻辑
-                    let colophonHTML = item.colophon ? `<div class="article-colophon">${item.colophon}</div>` : '';
+                    // 题跋增强：带朱砂小印
+                    let colophonHTML = item.colophon ? `
+                        <div class="colophon-wrap">
+                            <div class="colophon-seal"></div>
+                            <div class="article-colophon">${item.colophon}</div>
+                        </div>` : '';
 
                     track.innerHTML += `<div class="content-card"><h2 class="article-title">${item.title}</h2>${inner}${colophonHTML}</div>`;
                 });
 
+                // 落款
                 const date = new Date().toLocaleDateString('zh-CN-u-ca-chinese');
-                track.innerHTML += `<div class="content-card" style="justify-content:center; min-width:40vw;"><div style="font-family:var(--font-body); font-weight:700; color:#999; letter-spacing:2px; writing-mode:vertical-rl;">${date}<br>青云道人 敬书<br><div style="width:40px; height:40px; border:2px solid #ccc; margin-top:20px; line-height:40px; text-align:center;">印</div></div></div>`;
+                track.innerHTML += `<div class="content-card" style="justify-content:center; min-width:40vw;"><div style="font-family:var(--font-body); font-weight:900; color:#999; letter-spacing:2px; writing-mode:vertical-rl;">${date}<br>青云道人 敬书<br><div style="width:40px; height:40px; border:2px solid #ccc; margin-top:20px; line-height:40px; text-align:center;">印</div></div></div>`;
                 gsap.fromTo(".content-card", { x: 40, opacity: 0 }, { x: 0, opacity: 1, duration: 1, stagger: 0.15, ease: "power2.out" });
             } catch (err) { track.innerHTML = `<div class="content-card">天机受阻：${err.message}</div>`; }
         }
@@ -179,37 +206,23 @@
             if(!title) return alert("标题不可为空");
             try {
                 const { error } = await _supabase.from('posts').insert([{
-                    target: t, 
-                    type: document.getElementById('pType').value, 
-                    title: title, 
-                    body: document.getElementById('pBody').value || ' ', 
-                    media: document.getElementById('pMedia').value,
-                    colophon: document.getElementById('pColophon').value || null // 新增题跋字段
+                    target: t, type: document.getElementById('pType').value, title: title, body: document.getElementById('pBody').value || ' ', media: document.getElementById('pMedia').value, colophon: document.getElementById('pColophon').value || null
                 }]);
                 if (error) throw error;
                 alert("受箓成功");
                 toggleAdmin();
-                document.getElementById('pTitle').value = ""; document.getElementById('pBody').value = ""; 
-                document.getElementById('pMedia').value = ""; document.getElementById('pColophon').value = "";
+                document.getElementById('pTitle').value = ""; document.getElementById('pBody').value = ""; document.getElementById('pMedia').value = ""; document.getElementById('pColophon').value = "";
             } catch (err) { alert("发布失败：" + err.message); }
         }
 
-        function checkPermission() { isAdmin ? toggleAdmin() : document.getElementById('gateModal').classList.add('active'); }
+        function checkPermission() { isAdmin ? toggleAdmin() : document.getElementById('gateModal').style.display = 'flex'; }
         function verifyPass() { if(document.getElementById('gatePass').value === 'tao') { isAdmin = true; sessionStorage.setItem('is_dao_admin', 'true'); closeGate(); toggleAdmin(); } else alert("口令不对。"); }
-        function closeGate() { document.getElementById('gateModal').classList.remove('active'); }
+        function closeGate() { document.getElementById('gateModal').style.display = 'none'; }
         function toggleAdmin() { document.getElementById('adminPanel').classList.toggle('open'); }
         function closeRealm() { document.getElementById('voidRealm').classList.remove('active'); }
         function toggleFields() { const t = document.getElementById('pType').value; const m = document.getElementById('pMedia'); m.style.display = (t === 'image' || t === 'video') ? 'block' : 'none'; }
 
-        window.onload = () => {
-            const d = "丙午年 · 正月";
-            document.getElementById('f1').innerText = `${d} · 宜静思`;
-            document.getElementById('f2').innerText = `${d} · 宜研习`;
-            document.getElementById('f3').innerText = `${d} · 宜修行`;
-            gsap.to('.fate-mark', { opacity: 0.8, y: 0, duration: 1.5, stagger: 0.3, delay: 0.5 });
-            toggleFields();
-        };
-
+        window.onload = () => { toggleFields(); };
         const dot = document.getElementById('cDot'); const aura = document.getElementById('cAura');
         if(window.matchMedia("(pointer: fine)").matches) {
             window.addEventListener('mousemove', (e) => {
