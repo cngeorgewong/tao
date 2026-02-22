@@ -17,84 +17,85 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body, html { margin: 0; padding: 0; background: var(--void-bg); overflow: hidden; height: 100%; cursor: none; }
 
-        /* --- 意境氛围 --- */
-        .ambient-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; background: radial-gradient(circle at 50% 50%, #fff 0%, #f0f0eb 100%); }
-        .noise { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; opacity: 0.03; pointer-events: none; background: url('https://www.transparenttextures.com/patterns/stardust.png'); }
-        .fog { position: absolute; border-radius: 50%; background: #fff; filter: blur(60px); opacity: 0.5; animation: breathe 10s infinite ease-in-out; }
-        @keyframes breathe { 0%,100% {transform: scale(1); opacity:0.4;} 50% {transform: scale(1.15); opacity:0.6;} }
-        
-        @media (pointer: fine) {
-            .cursor-dot { position: fixed; width: 8px; height: 8px; background: var(--ink-deep); border-radius: 50%; pointer-events: none; z-index: 9999; }
-            .cursor-aura { position: fixed; width: 40px; height: 40px; border: 1px solid rgba(0,0,0,0.1); border-radius: 50%; pointer-events: none; z-index: 9998; }
+        /* --- 首页排版修复 (隔离区) --- */
+        .main-scroll { 
+            height: 100vh; overflow-y: auto; scroll-snap-type: y mandatory; 
+            position: relative; z-index: 10; scrollbar-width: none; 
+        }
+        .section { 
+            height: 100vh; width: 100%; scroll-snap-align: center; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            position: relative; 
         }
 
-        /* --- 首页 --- */
-        .main-scroll { height: 100vh; overflow-y: auto; scroll-snap-type: y mandatory; position: relative; z-index: 10; scrollbar-width: none; }
-        .main-scroll::-webkit-scrollbar { display: none; }
-        .section { height: 100vh; width: 100%; scroll-snap-align: center; display: flex; justify-content: center; align-items: center; position: relative; }
-        .hero-text { writing-mode: vertical-rl; font-family: var(--font-art); font-size: 8.5vh; font-weight: 900; letter-spacing: 0.25em; color: var(--ink-deep); position: relative; cursor: pointer; z-index: 20; transition: 0.5s; }
+        /* 首页文字：强制重置排版属性 */
+        .hero-text { 
+            writing-mode: vertical-rl !important; 
+            text-orientation: mixed !important; /* 首页保持混合模式以防错位 */
+            font-family: var(--font-art); font-size: 8.5vh; font-weight: 900; 
+            letter-spacing: 0.25em; color: var(--ink-deep); 
+            cursor: pointer; z-index: 20; transition: 0.5s; 
+            user-select: none;
+        }
         .hero-text:hover { color: var(--cinnabar); }
 
-        /* --- 长卷阅读器 (核心修复区) --- */
-        .void-realm { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 1000; clip-path: inset(0 0 100% 0); transition: clip-path 1.2s cubic-bezier(0.77, 0, 0.175, 1); }
+        .bg-seal { position: absolute; width: 45vh; height: 45vh; opacity: 0.04; z-index: 1; fill: var(--ink-deep); mix-blend-mode: multiply; pointer-events: none; }
+
+        /* --- 结界阅读器 (排版优化区) --- */
+        .void-realm { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 1000; clip-path: inset(0 0 100% 0); transition: clip-path 1s cubic-bezier(0.77, 0, 0.175, 1); }
         .void-realm.active { clip-path: inset(0 0 0 0); }
-        .infinite-track { display: flex; height: 100%; width: 100%; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; cursor: grab; background: linear-gradient(90deg, #fff 0%, #fdfbf6 100%); }
+        .infinite-track { display: flex; height: 100%; width: 100%; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; background: linear-gradient(90deg, #fff 0%, #fdfbf6 100%); }
         
-        .content-card { flex-shrink: 0; height: 100%; min-width: 60vw; display: flex; align-items: center; writing-mode: vertical-rl; padding: 0 4vw; box-sizing: border-box; border-right: 1px dashed rgba(0,0,0,0.03); }
-        
-        /* 强制竖正：不仅针对容器，针对所有子元素 */
+        .content-card { flex-shrink: 0; height: 100%; min-width: 60vw; display: flex; align-items: center; writing-mode: vertical-rl; padding: 0 4vw; border-right: 1px dashed rgba(0,0,0,0.03); }
+
         .article-title { 
-            font-family: var(--font-body); font-size: 3.2rem; font-weight: 900; 
-            margin-left: 35px; border-left: 5px solid var(--cinnabar); 
-            padding-left: 18px; color: #111; 
-            writing-mode: vertical-rl; text-orientation: upright !important; 
+            font-family: var(--font-body); font-size: 3rem; font-weight: 900; 
+            margin-left: 40px; border-left: 6px solid var(--cinnabar); 
+            padding-left: 20px; color: #111; 
+            text-orientation: upright; 
         }
 
+        /* 核心优化：针对英文和数字的协调感 */
         .article-body { 
-            font-family: var(--font-body); font-size: 1.25rem; line-height: 2.4; 
+            font-family: var(--font-body); font-size: 1.2rem; line-height: 2.2; 
             font-weight: 700; color: #222; text-align: justify; height: 65vh; 
-            column-fill: auto; margin-left: 35px; white-space: pre-wrap; 
-            letter-spacing: 0.05em; 
-            writing-mode: vertical-rl; text-orientation: upright !important; 
+            column-fill: auto; margin-left: 40px; white-space: pre-wrap; 
+            text-orientation: upright; 
+            letter-spacing: -0.02em; /* 略微紧缩以增强协调感 */
+            word-break: break-all;
         }
 
-        /* 题跋升级：增加朱砂小印引导 */
+        /* 处理 2-4 位数字的纵向组合（如年份 2026） */
+        .num-group { text-combine-upright: all; -webkit-text-combine-upright: all; }
+
+        /* 题跋系统美化 */
         .colophon-wrap {
             margin-left: 60px; height: 50vh; display: flex; flex-direction: row; 
-            writing-mode: vertical-rl; border-right: 1px solid #eee; padding-right: 15px;
+            writing-mode: vertical-rl; border-right: 1px solid #eee; padding-right: 20px;
         }
-        .colophon-seal {
-            width: 14px; height: 14px; background: var(--cinnabar); 
-            margin-bottom: 10px; display: inline-block;
-        }
+        .colophon-seal { width: 12px; height: 12px; background: var(--cinnabar); margin-bottom: 12px; transform: rotate(45deg); }
         .article-colophon {
-            font-family: var(--font-body); font-size: 1rem; line-height: 2; 
-            font-weight: 500; color: #777; opacity: 0.9;
-            text-orientation: upright !important;
+            font-family: var(--font-body); font-size: 0.95rem; line-height: 1.8; 
+            font-weight: 500; color: #888; text-orientation: upright;
         }
 
-        .gallery-frame { max-height: 55vh; max-width: 70vw; width: auto; box-shadow: 15px 15px 50px rgba(0,0,0,0.1); border: 10px solid #fff; outline: 1px solid #eee; margin: 0 40px; object-fit: contain; background: #000; }
-        
-        /* 阵法公式：极致强化 */
-        .logic-node { border: 2.5px solid var(--gold); background: rgba(191, 164, 111, 0.08); padding: 50px 30px; margin: 0 50px; position: relative; writing-mode: vertical-rl; }
-        .logic-formula { 
-            font-family: 'Courier New', monospace; font-size: 1.3rem; 
-            color: var(--ink-deep); font-weight: 900; 
-            text-orientation: upright !important; 
-        }
+        .gallery-frame { max-height: 55vh; box-shadow: 20px 20px 60px rgba(0,0,0,0.08); border: 12px solid #fff; outline: 1px solid #eee; margin: 0 50px; object-fit: contain; background: #000; }
 
-        /* UI 入口 */
+        /* --- UI 组件 --- */
         .spirit-dot { position: fixed; bottom: 40px; left: 40px; width: 14px; height: 14px; background: var(--cinnabar); border-radius: 50%; z-index: 3000; cursor: pointer; animation: pulse-red 3s infinite; }
         .admin-glass { position: fixed; bottom: 0; left: 0; width: 100%; height: 0; background: #fff; z-index: 5000; transition: 0.6s cubic-bezier(0.19, 1, 0.22, 1); overflow: hidden; border-radius: 30px 30px 0 0; }
         .admin-glass.open { height: 85vh; }
         .form-wrap { padding: 40px; max-width: 600px; margin: 0 auto; font-family: var(--font-body); }
-        .minimal-input { width: 100%; border: none; border-bottom: 1px solid #ddd; background: transparent; padding: 15px 0; font-size: 16px; margin-bottom: 25px; outline: none; font-weight: 600; }
-        .minimal-btn { background: var(--ink-deep); color: #fff; border: none; padding: 15px 40px; cursor: pointer; border-radius: 4px; width: 100%; margin-bottom: 10px; font-weight: 700; }
+        .minimal-input { width: 100%; border: none; border-bottom: 1px solid #ddd; background: transparent; padding: 15px 0; font-size: 16px; margin-bottom: 25px; outline: none; }
+        .minimal-btn { background: var(--ink-deep); color: #fff; border: none; padding: 15px 40px; cursor: pointer; border-radius: 4px; width: 100%; font-weight: 700; }
+        
+        .ambient-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; background: radial-gradient(circle at 50% 50%, #fff 0%, #f0f0eb 100%); }
+        @keyframes breathe { 0%,100% {transform: scale(1); opacity:0.4;} 50% {transform: scale(1.1); opacity:0.6;} }
 
-        .close-realm { position: fixed; top: 35px; right: 35px; font-size: 2rem; color: #ccc; cursor: pointer; z-index: 2001; opacity: 0; }
-        .void-realm.active .close-realm { opacity: 1; }
+        /* 隐藏首页不需要的浮动元素 */
+        .cursor-dot, .cursor-aura { pointer-events: none; }
 
-        @media screen and (max-width: 768px) { .content-card { min-width: 90vw; } .article-title { font-size: 2.2rem; margin-left: 15px; } .article-body { font-size: 1.1rem; margin-left: 15px; } .colophon-wrap { display: none; } }
+        @media screen and (max-width: 768px) { .content-card { min-width: 90vw; } .hero-text { font-size: 6.5vh; } .article-title { font-size: 2rem; margin-left: 20px; } .article-body { font-size: 1.1rem; margin-left: 20px; } .colophon-wrap { display: none; } }
     </style>
 </head>
 <body>
@@ -104,66 +105,63 @@
 
     <div class="spirit-dot" onclick="checkPermission()"></div>
 
-    <div class="gatekeeper-modal" id="gateModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.98); z-index:6000; display:none; align-items:center; justify-content:center;">
-        <div style="text-align:center; font-family:var(--font-body);">
-            <h2 style="font-family:var(--font-art); font-size:2.5rem; font-weight:normal;">太虚禁地</h2>
-            <input type="password" id="gatePass" style="border:none; border-bottom:2px solid #000; font-size:2rem; width:180px; text-align:center; background:transparent; outline:none; margin-top:30px; font-family:var(--font-art);" placeholder="口令">
-            <button onclick="verifyPass()" class="minimal-btn" style="margin-top:40px; width:auto; padding:10px 40px;">入 阵</button>
-            <div onclick="closeGate()" style="margin-top:25px; cursor:pointer; color:#999; font-size:0.9rem;">离去</div>
-        </div>
-    </div>
-
     <div class="admin-glass" id="adminPanel">
         <div class="form-wrap">
-            <h2 style="font-family:var(--font-art); color:var(--cinnabar); font-size:2.5rem; margin-top:0;">云端受箓</h2>
+            <h2 style="font-family:var(--font-art); color:var(--cinnabar); font-size:2.5rem; margin-top:0;">受箓 · 存真</h2>
             <select id="pTarget" class="minimal-input">
                 <option value="wangwu">其一：王屋洞天</option>
                 <option value="weiyu">其二：委羽山洞</option>
                 <option value="chisong">其三：赤松遗风</option>
             </select>
-            <select id="pType" class="minimal-input" onchange="toggleFields()">
-                <option value="article">体裁：文章 (宋体加粗)</option>
-                <option value="image">体裁：图文 (画轴裱装)</option>
-                <option value="video">体裁：留影 (动态影像)</option>
-                <option value="logic">体裁：阵法 (竖排公式)</option>
+            <select id="pType" class="minimal-input">
+                <option value="article">体裁：文章</option>
+                <option value="image">体裁：图文</option>
+                <option value="video">体裁：留影</option>
+                <option value="logic">体裁：阵法</option>
             </select>
             <input id="pTitle" class="minimal-input" placeholder="标题 / Title">
             <input id="pMedia" class="minimal-input" placeholder="媒体链接 (URL)">
-            <textarea id="pBody" class="minimal-input" rows="3" placeholder="正文内容 / 正文中的英文数字将强制直立"></textarea>
+            <textarea id="pBody" class="minimal-input" rows="3" placeholder="正文内容"></textarea>
             <textarea id="pColophon" class="minimal-input" rows="2" placeholder="题跋 (侧位批注)"></textarea>
-            <button class="minimal-btn" onclick="publish()">同步至经变图</button>
+            <button class="minimal-btn" onclick="publish()">同步至云端</button>
             <div style="margin-top:20px; text-align:center; color:#999; cursor:pointer;" onclick="toggleAdmin()">收起法简</div>
         </div>
     </div>
 
     <div class="void-realm" id="voidRealm">
-        <div class="close-realm" onclick="closeRealm()">✕</div>
+        <div style="position:fixed; top:35px; right:35px; font-size:2rem; color:#ccc; cursor:pointer; z-index:2001;" onclick="closeRealm()">✕</div>
         <div class="infinite-track" id="infiniteTrack"></div>
     </div>
 
-    <div class="main-scroll">
+    <div class="main-scroll" id="mainScroll">
         <section class="section">
-            <svg class="bg-seal" viewBox="0 0 100 100"><rect x="20" y="20" width="60" height="60" transform="rotate(45 50 50)" /></svg>
+            <svg class="bg-seal" viewBox="0 0 100 100"><rect x="25" y="25" width="50" height="50" transform="rotate(45 50 50)" /></svg>
             <div class="hero-text" onclick="enterRealm('wangwu')">王屋洞天</div>
         </section>
         <section class="section">
-            <svg class="bg-seal" viewBox="0 0 100 100"><circle cx="50" cy="50" r="35" /></svg>
+            <svg class="bg-seal" viewBox="0 0 100 100"><circle cx="50" cy="50" r="30" /></svg>
             <div class="hero-text" onclick="enterRealm('weiyu')">委羽山洞</div>
         </section>
         <section class="section">
-            <svg class="bg-seal" viewBox="0 0 100 100"><path d="M10,90 L50,10 L90,90 Z" /></svg>
+            <svg class="bg-seal" viewBox="0 0 100 100"><path d="M50,20 L80,80 L20,80 Z" /></svg>
             <div class="hero-text" onclick="enterRealm('chisong')">赤松遗风</div>
         </section>
     </div>
 
     <script>
-        // --- 请填入你的 Supabase Key ---
+        // --- 核心配置 ---
         const SUPABASE_URL = 'https://mctqfattznybghuobqum.supabase.co'; 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jdHFmYXR0em55YmdodW9icXVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3NjUwMDQsImV4cCI6MjA4NzM0MTAwNH0.ma30ugPfjQWmQUELCOiRxc0bI_w0ky-yGykhrzIdefQ';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         gsap.registerPlugin(ScrollTrigger);
         let isAdmin = sessionStorage.getItem('is_dao_admin') === 'true';
+
+        // 辅助函数：处理正文中的数字组合（2-4位）
+        function processText(text) {
+            // 将 2-4 位连续数字包裹在 .num-group 中
+            return text.replace(/\b(\d{2,4})\b/g, '<span class="num-group">$1</span>');
+        }
 
         async function enterRealm(id) {
             const track = document.getElementById('infiniteTrack');
@@ -177,27 +175,21 @@
                 track.onwheel = (e) => { if(e.deltaY!==0){e.preventDefault(); track.scrollLeft+=e.deltaY;} };
 
                 data.forEach(item => {
+                    let content = processText(item.body);
                     let inner = '';
-                    if (item.type === 'logic') inner = `<div class="logic-node"><div class="logic-formula">${item.body}</div></div>`;
-                    else if (item.type === 'video') inner = `<video src="${item.media}" controls class="gallery-frame" playsinline></video><div class="article-body">${item.body}</div>`;
-                    else if (item.type === 'image') inner = `<img src="${item.media}" class="gallery-frame"><div class="article-body">${item.body}</div>`;
-                    else inner = `<div class="article-body">${item.body}</div>`;
+                    if (item.type === 'logic') inner = `<div class="logic-node"><div class="logic-formula">${content}</div></div>`;
+                    else if (item.type === 'video') inner = `<video src="${item.media}" controls class="gallery-frame"></video><div class="article-body">${content}</div>`;
+                    else if (item.type === 'image') inner = `<img src="${item.media}" class="gallery-frame"><div class="article-body">${content}</div>`;
+                    else inner = `<div class="article-body">${content}</div>`;
 
-                    // 题跋增强：带朱砂小印
-                    let colophonHTML = item.colophon ? `
-                        <div class="colophon-wrap">
-                            <div class="colophon-seal"></div>
-                            <div class="article-colophon">${item.colophon}</div>
-                        </div>` : '';
+                    let colophonHTML = item.colophon ? `<div class="colophon-wrap"><div class="colophon-seal"></div><div class="article-colophon">${processText(item.colophon)}</div></div>` : '';
 
                     track.innerHTML += `<div class="content-card"><h2 class="article-title">${item.title}</h2>${inner}${colophonHTML}</div>`;
                 });
 
-                // 落款
-                const date = new Date().toLocaleDateString('zh-CN-u-ca-chinese');
-                track.innerHTML += `<div class="content-card" style="justify-content:center; min-width:40vw;"><div style="font-family:var(--font-body); font-weight:900; color:#999; letter-spacing:2px; writing-mode:vertical-rl;">${date}<br>青云道人 敬书<br><div style="width:40px; height:40px; border:2px solid #ccc; margin-top:20px; line-height:40px; text-align:center;">印</div></div></div>`;
-                gsap.fromTo(".content-card", { x: 40, opacity: 0 }, { x: 0, opacity: 1, duration: 1, stagger: 0.15, ease: "power2.out" });
-            } catch (err) { track.innerHTML = `<div class="content-card">天机受阻：${err.message}</div>`; }
+                track.innerHTML += `<div class="content-card" style="justify-content:center; min-width:40vw;"><div style="font-family:var(--font-body); font-weight:900; color:#999; letter-spacing:2px; writing-mode:vertical-rl;">丙午年 · 数字化道人<br><div style="width:40px; height:40px; border:2px solid #ccc; margin-top:20px; line-height:40px; text-align:center;">印</div></div></div>`;
+                gsap.fromTo(".content-card", { x: 40, opacity: 0 }, { x: 0, opacity: 1, duration: 1, stagger: 0.15 });
+            } catch (err) { track.innerHTML = `<div class="content-card">连接失败：${err.message}</div>`; }
         }
 
         async function publish() {
@@ -206,30 +198,30 @@
             if(!title) return alert("标题不可为空");
             try {
                 const { error } = await _supabase.from('posts').insert([{
-                    target: t, type: document.getElementById('pType').value, title: title, body: document.getElementById('pBody').value || ' ', media: document.getElementById('pMedia').value, colophon: document.getElementById('pColophon').value || null
+                    target: t, type: document.getElementById('pType').value, title: title, body: document.getElementById('pBody').value, media: document.getElementById('pMedia').value, colophon: document.getElementById('pColophon').value
                 }]);
                 if (error) throw error;
-                alert("受箓成功");
-                toggleAdmin();
-                document.getElementById('pTitle').value = ""; document.getElementById('pBody').value = ""; document.getElementById('pMedia').value = ""; document.getElementById('pColophon').value = "";
-            } catch (err) { alert("发布失败：" + err.message); }
+                alert("发布成功"); toggleAdmin();
+            } catch (err) { alert("失败：" + err.message); }
         }
 
-        function checkPermission() { isAdmin ? toggleAdmin() : document.getElementById('gateModal').style.display = 'flex'; }
-        function verifyPass() { if(document.getElementById('gatePass').value === 'tao') { isAdmin = true; sessionStorage.setItem('is_dao_admin', 'true'); closeGate(); toggleAdmin(); } else alert("口令不对。"); }
-        function closeGate() { document.getElementById('gateModal').style.display = 'none'; }
+        // 基础逻辑
+        function checkPermission() { 
+            if(isAdmin) toggleAdmin();
+            else {
+                let pass = prompt("输入入阵口令");
+                if(pass === 'tao') { isAdmin = true; sessionStorage.setItem('is_dao_admin', 'true'); toggleAdmin(); }
+            }
+        }
         function toggleAdmin() { document.getElementById('adminPanel').classList.toggle('open'); }
         function closeRealm() { document.getElementById('voidRealm').classList.remove('active'); }
-        function toggleFields() { const t = document.getElementById('pType').value; const m = document.getElementById('pMedia'); m.style.display = (t === 'image' || t === 'video') ? 'block' : 'none'; }
 
-        window.onload = () => { toggleFields(); };
+        // 水墨光标
         const dot = document.getElementById('cDot'); const aura = document.getElementById('cAura');
-        if(window.matchMedia("(pointer: fine)").matches) {
-            window.addEventListener('mousemove', (e) => {
-                gsap.to(dot, {x: e.clientX, y: e.clientY, duration: 0.1});
-                gsap.to(aura, {x: e.clientX, y: e.clientY, duration: 0.4});
-            });
-        }
+        window.addEventListener('mousemove', (e) => {
+            gsap.to(dot, {x: e.clientX, y: e.clientY, duration: 0.1});
+            gsap.to(aura, {x: e.clientX, y: e.clientY, duration: 0.4});
+        });
     </script>
 </body>
 </html>
