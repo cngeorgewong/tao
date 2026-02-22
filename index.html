@@ -8,6 +8,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;700;900&display=swap" rel="stylesheet">
 
     <style>
@@ -20,34 +23,31 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body, html { margin: 0; padding: 0; background: var(--void-bg); height: 100%; width: 100%; overflow: hidden; font-family: var(--font-body); }
 
-        /* --- 1. 首页排版防撞修复 --- */
+        /* --- 1. 首页：恢复空灵与留白 --- */
         .main-scroll { height: 100vh; width: 100%; overflow-y: scroll; scroll-snap-type: y mandatory; position: relative; z-index: 10; }
         .main-scroll::-webkit-scrollbar { display: none; }
         .section { height: 100vh; width: 100%; scroll-snap-align: center; display: flex; justify-content: center; align-items: center; position: relative; }
-        
-        /* 容器包裹，确保相对位置 */
         .hero-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
 
         .hero-text {
-            writing-mode: vertical-rl; font-family: var(--font-art); font-size: 5.5rem; 
-            font-weight: 400; letter-spacing: 0.2em; color: var(--ink);
+            writing-mode: vertical-rl; font-family: var(--font-art); 
+            font-size: 4.2rem; /* 核心修复：字号调小 */
+            font-weight: 400;  /* 核心修复：去除加粗，恢复书法骨感 */
+            letter-spacing: 0.25em; color: var(--ink);
             cursor: pointer; transition: 0.3s; z-index: 20; margin: 0;
-            text-shadow: 2px 2px 10px rgba(0,0,0,0.03);
+            text-shadow: 1px 1px 5px rgba(0,0,0,0.03);
         }
         .hero-text:active { transform: scale(0.95); color: var(--cinnabar); }
 
-        /* 改为相对绝对定位，依附于 hero-wrap，绝不重叠 */
         .fate-mark {
-            position: absolute; right: -50px; /* 永远在主标题左侧(竖排的右侧)50px处 */
-            writing-mode: vertical-rl; font-family: var(--font-body); font-size: 0.85rem; 
-            font-weight: 700; color: #666; border-top: 2px solid var(--cinnabar); 
-            padding-top: 15px; letter-spacing: 0.25em; opacity: 0; pointer-events: none;
-            white-space: nowrap;
+            position: absolute; right: -45px; writing-mode: vertical-rl; 
+            font-family: var(--font-body); font-size: 0.85rem; font-weight: 700; color: #666; 
+            border-top: 1.5px solid var(--cinnabar); padding-top: 15px; letter-spacing: 0.2em; 
+            opacity: 0; pointer-events: none; white-space: nowrap;
         }
+        .bg-seal { position: absolute; width: 45vw; height: 45vw; max-width: 350px; max-height: 350px; opacity: 0.04; z-index: 1; fill: var(--ink); mix-blend-mode: multiply; pointer-events: none; }
 
-        .bg-seal { position: absolute; width: 50vw; height: 50vw; max-width: 400px; max-height: 400px; opacity: 0.04; z-index: 1; fill: var(--ink); mix-blend-mode: multiply; pointer-events: none; }
-
-        /* --- 2. 长卷“露角”与间距优化 --- */
+        /* --- 2. 结界长卷与 Markdown 竖排渲染树 --- */
         .void-realm { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 1000; transform: translateY(100%); transition: transform 0.6s cubic-bezier(0.2, 0, 0, 1); display: flex; flex-direction: column; }
         .void-realm.active { transform: translateY(0); }
         .realm-bar { height: 60px; width: 100%; display: flex; justify-content: flex-end; align-items: center; padding-right: 20px; z-index: 2000; background: linear-gradient(to bottom, #fff, rgba(255,255,255,0)); }
@@ -59,35 +59,47 @@
             background: linear-gradient(90deg, #fff 0%, #fcfcf9 100%); 
         }
 
-        /* 修复假死：宽度自适应，卡片紧凑，右侧虚线分隔 */
         .content-card { 
-            height: 100%; width: max-content; /* 让内容决定宽度 */
-            display: flex; align-items: center; justify-content: flex-start; 
-            writing-mode: vertical-rl; padding: 30px 20px; 
-            border-right: 1px dashed #ddd; flex-shrink: 0; 
+            height: 100%; width: max-content; display: flex; align-items: center; justify-content: flex-start; 
+            writing-mode: vertical-rl; padding: 30px 20px; border-right: 1px dashed #ddd; flex-shrink: 0; 
         }
 
-        .article-title { font-family: var(--font-body); font-size: 2rem; font-weight: 900; margin-left: 20px; border-left: 4px solid var(--cinnabar); padding-left: 15px; color: #222; }
+        .article-title { font-family: var(--font-body); font-size: 2.2rem; font-weight: 900; margin-left: 20px; border-left: 4px solid var(--cinnabar); padding-left: 15px; color: #222; }
         
+        /* Markdown 容器竖排适配 */
         .article-body { 
+            display: block; /* 必须是block才能让内部元素自右向左排列 */
             font-family: var(--font-body); font-size: 1.1rem; line-height: 2.2; 
-            color: #333; height: 75%; text-align: justify; white-space: pre-wrap; 
-            margin-left: 20px; margin-right: 10px;
+            color: #333; height: 75vh; text-align: justify; 
+            margin-left: 20px; margin-right: 15px; column-fill: auto;
         }
-        .article-body p { margin: 0; }
+
+        /* Markdown 元素在竖排 (vertical-rl) 下的重写 */
+        .article-body p { margin-left: 1.5rem; /* 段落间距 (横向变纵向的逻辑) */ text-orientation: upright; letter-spacing: 0.02em; word-break: break-all; }
+        .article-body h1, .article-body h2, .article-body h3 { 
+            font-family: var(--font-body); font-weight: 900; color: #111; 
+            margin-left: 1.5rem; margin-right: 1rem; text-orientation: upright;
+        }
+        .article-body strong { font-weight: 900; color: #000; }
+        .article-body em { font-style: normal; text-decoration: underline; text-decoration-color: var(--cinnabar); }
+        .article-body blockquote { 
+            border-top: 3px solid var(--gold); /* 竖排时，引用线在上方 */
+            padding-top: 15px; margin-left: 1.5rem; color: #777; 
+        }
+        .article-body ul, .article-body ol { margin-left: 1.5rem; padding-top: 25px; text-orientation: upright; }
+        .article-body li { margin-left: 0.8rem; }
         
-        /* 智能多媒体容器 */
-        .gallery-frame { 
-            max-height: 50vh; max-width: 70vw; 
-            box-shadow: 5px 5px 15px rgba(0,0,0,0.08); 
-            border: 4px solid #fff; outline: 1px solid #eee; 
-            margin: 0 15px; background: #000; display: block; object-fit: contain;
+        /* Markdown 插入的图片/视频裱装化 */
+        .article-body img, .article-body video { 
+            max-height: 50vh; max-width: 70vw; box-shadow: 5px 5px 15px rgba(0,0,0,0.08); 
+            border: 4px solid #fff; outline: 1px solid #eee; margin: 0 1.5rem; 
+            background: #000; object-fit: contain; display: inline-block;
         }
 
         .num-group { text-combine-upright: all; -webkit-text-combine-upright: all; font-family: sans-serif; }
-        .colophon-box { font-size: 0.8rem; color: #999; margin-left: 20px; border-right: 1px solid #eee; padding-right: 10px; height: 60%; }
+        .colophon-box { font-size: 0.85rem; color: #888; margin-left: 20px; border-right: 1px solid #eee; padding-right: 15px; height: 60%; text-orientation: upright; }
 
-        /* --- 3. 后台极简 UI --- */
+        /* --- 3. UI 交互 --- */
         .spirit-dot { position: fixed; bottom: 30px; left: 30px; width: 12px; height: 12px; background: var(--cinnabar); border-radius: 50%; z-index: 5000; box-shadow: 0 0 0 4px rgba(194,56,56,0.1); cursor: pointer; }
         .admin-panel { position: fixed; bottom: 0; left: 0; width: 100%; height: 0; background: #fff; z-index: 6000; transition: 0.4s; border-radius: 20px 20px 0 0; overflow: hidden; box-shadow: 0 -10px 30px rgba(0,0,0,0.1); }
         .admin-panel.open { height: 90vh; }
@@ -95,7 +107,6 @@
         input, select, textarea { width: 100%; border: none; border-bottom: 1px solid #ccc; padding: 15px 0; margin-bottom: 20px; font-size: 16px; background: transparent; outline: none; border-radius: 0; font-family: var(--font-body); }
         button { width: 100%; padding: 15px; background: var(--ink); color: #fff; border: none; font-size: 16px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-bottom: 15px;}
         
-        /* 晨省 */
         .morning-trigger { position: fixed; top: 30px; left: 30px; z-index: 4000; writing-mode: vertical-rl; font-weight: 700; font-size: 0.9rem; color: var(--ink); letter-spacing: 0.3em; cursor: pointer; opacity: 0.6; border-right: 2px solid var(--gold); padding-right: 8px; }
         .morning-panel { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(245, 245, 242, 0.98); z-index: 6500; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: 0.5s; }
         .morning-panel.active { opacity: 1; pointer-events: auto; }
@@ -105,9 +116,9 @@
         .sleep-btn.selected { background: var(--gold); color: #fff; border-color: var(--gold); }
 
         @media screen and (min-width: 768px) {
-            .hero-text { font-size: 7.5rem; }
-            .fate-mark { right: -70px; font-size: 1rem; }
-            .article-body { height: 60%; }
+            .hero-text { font-size: 6rem; } /* PC端同样缩减字号 */
+            .fate-mark { right: -60px; font-size: 1rem; }
+            .article-body { height: 65vh; }
         }
     </style>
 </head>
@@ -124,7 +135,7 @@
                 <button class="sleep-btn" onclick="selectSleep(this, '浅梦')">浅梦</button>
                 <button class="sleep-btn" onclick="selectSleep(this, '辗转')">辗转</button>
             </div>
-            <textarea id="mSchedule" style="border:1px solid #eee; background:#fff; border-radius:10px; padding:15px; height:120px; resize:none; text-align:left;" placeholder="写下今日的核心日程或心境..."></textarea>
+            <textarea id="mSchedule" style="border:1px solid #eee; background:#fff; border-radius:10px; padding:15px; height:120px; resize:none; text-align:left;" placeholder="使用 Markdown 记录日程..."></textarea>
             <button style="background:var(--gold);" onclick="submitMorning()">存入经卷</button>
             <div style="margin-top:10px; color:#999; cursor:pointer;" onclick="toggleMorning()">退下</div>
         </div>
@@ -163,8 +174,8 @@
 
     <div class="admin-panel" id="adminPanel">
         <div class="form-content">
-            <h3 style="margin-top:0; color:var(--cinnabar); font-family:var(--font-art); font-size:2rem; font-weight:normal;">自由流发布</h3>
-            <p style="font-size:0.8rem; color:#666; margin-top:-10px;">*无需选类型。在正文中，只需另起一行粘贴图片或视频链接，系统会自动识别排版。</p>
+            <h3 style="margin-top:0; color:var(--cinnabar); font-family:var(--font-art); font-size:2rem; font-weight:normal;">Markdown 受箓</h3>
+            <p style="font-size:0.8rem; color:#666; margin-top:-10px;">支持 Markdown: <b>**加粗**</b>, <b>> 引用</b>, <b>![图](网址)</b></p>
             
             <select id="pTarget">
                 <option value="wangwu">王屋洞天</option>
@@ -173,7 +184,7 @@
             </select>
             <input id="pTitle" placeholder="标题 / Title">
             
-            <textarea id="pBody" rows="10" placeholder="在此书写正文。&#10;&#10;若需插入图片或视频，请新起一行，直接粘贴 URL 链接即可（支持 .jpg .png .mp4 等）。"></textarea>
+            <textarea id="pBody" rows="12" placeholder="在此书写 Markdown 正文...&#10;&#10;插入图片: ![描述](https://...)&#10;二级标题: ## 标题内容&#10;无序列表: - 项目一"></textarea>
             
             <input id="pColophon" placeholder="题跋批注 (可选)">
             <button onclick="publish()">发布</button>
@@ -187,35 +198,8 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jdHFmYXR0em55YmdodW9icXVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3NjUwMDQsImV4cCI6MjA4NzM0MTAwNH0.ma30ugPfjQWmQUELCOiRxc0bI_w0ky-yGykhrzIdefQ';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // --- 智能排版解析器 (The Magic Parser) ---
-        function parseSmartContent(text) {
-            if(!text) return '';
-            const lines = text.split('\n');
-            let html = '<div class="article-body">';
-            
-            lines.forEach(line => {
-                const trimmed = line.trim();
-                if (!trimmed) return;
-                
-                // 自动识别图片
-                if (trimmed.match(/^https?:\/\/.*\.(jpg|jpeg|png|gif|webp|svg)/i)) {
-                    html += `</div><img src="${trimmed}" class="gallery-frame"><div class="article-body">`;
-                } 
-                // 自动识别视频
-                else if (trimmed.match(/^https?:\/\/.*\.(mp4|webm|mov)/i)) {
-                    html += `</div><video src="${trimmed}" controls class="gallery-frame" playsinline></video><div class="article-body">`;
-                } 
-                // 普通文字 (处理数字组合)
-                else {
-                    const parsedText = trimmed.replace(/\b(\d{2,4})\b/g, '<span class="num-group">$1</span>');
-                    html += `<p>${parsedText}</p>`;
-                }
-            });
-            
-            html += '</div>';
-            // 清理多余的空容器
-            return html.replace(/<div class="article-body"><\/div>/g, '');
-        }
+        // 初始化 Marked.js 配置
+        marked.setOptions({ breaks: true }); // 允许单次回车换行
 
         // --- 晨省系统 ---
         let currentSleep = '酣睡';
@@ -228,10 +212,8 @@
             const scheduleText = document.getElementById('mSchedule').value;
             try {
                 const { error } = await _supabase.from('posts').insert([{
-                    target: 'chisong', 
-                    type: 'article', // 保留此字段以防数据库报错，但前端不再依赖它
-                    title: `晨省`,
-                    body: `【眠境】${currentSleep}\n\n【日程】\n${scheduleText || '无事挂心头。'}`,
+                    target: 'chisong', type: 'mixed', title: `晨省记录`,
+                    body: `**昨夜眠境**：${currentSleep}\n\n**今日日程**：\n${scheduleText || '无事挂心头。'}`,
                     colophon: new Date().toLocaleDateString('zh-CN-u-ca-chinese')
                 }]);
                 if (error) throw error;
@@ -262,7 +244,7 @@
             gsap.to('.fate-mark', { opacity: 0.8, y: -10, duration: 1.5, stagger: 0.3, ease: "power2.out", delay: 0.5 });
         }
 
-        // --- 长卷读取 ---
+        // --- 长卷读取 (Markdown 渲染) ---
         async function enterRealm(id) {
             const track = document.getElementById('infiniteTrack');
             track.innerHTML = '<div class="content-card">正在调取云端经卷...</div>';
@@ -276,17 +258,27 @@
                 track.onwheel = (e) => { if(e.deltaY!==0){e.preventDefault(); track.scrollLeft+=e.deltaY;} };
 
                 data.forEach(item => {
-                    // 调用智能解析器
-                    let smartHtml = parseSmartContent(item.body);
-                    // 兼容旧数据的单独图片链接
-                    if(item.media) {
-                        if(item.media.match(/\.(mp4|webm|mov)/i)) smartHtml += `<video src="${item.media}" controls class="gallery-frame" playsinline></video>`;
-                        else smartHtml += `<img src="${item.media}" class="gallery-frame">`;
+                    // 1. 将 Markdown 解析为 HTML
+                    let mdHtml = marked.parse(item.body || '');
+                    
+                    // 2. 对解析后的 HTML 中的数字(年份)进行纵中横包裹
+                    mdHtml = mdHtml.replace(/\b(\d{2,4})\b/g, '<span class="num-group">$1</span>');
+                    
+                    // 3. 兼容老数据的 media 字段
+                    if (item.media) {
+                        if(item.media.match(/\.(mp4|webm|mov)/i)) mdHtml += `<video src="${item.media}" controls playsinline></video>`;
+                        else mdHtml += `<img src="${item.media}">`;
                     }
 
+                    // 4. 处理题跋
                     let colophonHtml = item.colophon ? `<div class="colophon-box">${item.colophon.replace(/\b(\d{2,4})\b/g, '<span class="num-group">$1</span>')}</div>` : '';
 
-                    track.innerHTML += `<div class="content-card"><h2 class="article-title">${item.title}</h2>${smartHtml}${colophonHtml}</div>`;
+                    track.innerHTML += `
+                        <div class="content-card">
+                            <h2 class="article-title">${item.title}</h2>
+                            <div class="article-body">${mdHtml}</div>
+                            ${colophonHtml}
+                        </div>`;
                 });
 
                 const date = new Date().toLocaleDateString('zh-CN-u-ca-chinese');
@@ -300,12 +292,8 @@
             if(!title) return alert("标题不能为空");
             try {
                 const { error } = await _supabase.from('posts').insert([{
-                    target: document.getElementById('pTarget').value, 
-                    type: 'mixed', // 统一存为混合类型
-                    title: title, 
-                    body: document.getElementById('pBody').value, 
-                    media: '', // 媒体链接现在直接放在 body 里了，这个字段置空
-                    colophon: document.getElementById('pColophon').value
+                    target: document.getElementById('pTarget').value, type: 'mixed', 
+                    title: title, body: document.getElementById('pBody').value, media: '', colophon: document.getElementById('pColophon').value
                 }]);
                 if (error) throw error;
                 alert("发布成功"); toggleAdmin();
