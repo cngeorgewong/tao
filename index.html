@@ -7,8 +7,9 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;700;900&display=swap" rel="stylesheet">
 
     <style>
@@ -21,7 +22,7 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body, html { margin: 0; padding: 0; background: var(--void-bg); height: 100%; width: 100%; overflow: hidden; font-family: var(--font-body); }
 
-        /* --- 1. 动态气韵层 --- */
+        /* --- 动态气韵层 --- */
         .ambient-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; background: radial-gradient(circle at 50% 50%, #fff 0%, #f0f0eb 100%); }
         .fog { position: absolute; border-radius: 50%; background: #fff; filter: blur(60px); opacity: 0.5; animation: breathe 10s infinite ease-in-out; }
         @keyframes breathe { 0%,100% {transform: scale(1); opacity:0.4;} 50% {transform: scale(1.15); opacity:0.6;} }
@@ -31,12 +32,13 @@
             .cursor-aura { position: fixed; width: 40px; height: 40px; border: 1px solid rgba(0,0,0,0.15); border-radius: 50%; pointer-events: none; z-index: 9998; transition: transform 0.3s, opacity 0.3s; }
         }
 
-        /* --- 2. 首页与交互 (Hover 升级) --- */
+        /* --- 首页修复区 --- */
         .main-scroll { height: 100vh; width: 100%; overflow-y: scroll; scroll-snap-type: y mandatory; position: relative; z-index: 10; }
         .main-scroll::-webkit-scrollbar { display: none; }
-        
         .section { height: 100vh; width: 100%; scroll-snap-align: center; display: flex; justify-content: center; align-items: center; position: relative; cursor: pointer; }
-        .hero-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+        
+        /* 核心修复 2：将组合整体向左偏移，给右侧的副标题腾出空间 */
+        .hero-wrap { position: relative; display: flex; align-items: center; justify-content: center; transform: translateX(-20px); }
 
         .hero-text {
             writing-mode: vertical-rl; font-family: var(--font-art); 
@@ -45,28 +47,26 @@
             text-shadow: 1px 1px 5px rgba(0,0,0,0.03);
         }
         
-        /* 印章初始状态 */
         .bg-seal { 
             position: absolute; width: 45vw; height: 45vw; max-width: 350px; max-height: 350px; 
             opacity: 0.03; z-index: 1; fill: var(--ink); mix-blend-mode: multiply; pointer-events: none;
             transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1);
         }
 
-        /* Hover 联动特效：印章放大变深，文字变红上浮 */
         @media (pointer: fine) {
             .section:hover .bg-seal { transform: scale(1.15) rotate(5deg); opacity: 0.08; }
             .section:hover .hero-text { color: var(--cinnabar); transform: translateY(-10px); }
         }
-        .section:active .hero-text { transform: scale(0.95); color: var(--cinnabar); } /* 手机端反馈 */
+        .section:active .hero-text { transform: scale(0.95); color: var(--cinnabar); } 
 
         .fate-mark {
-            position: absolute; right: -45px; writing-mode: vertical-rl; 
+            position: absolute; right: -40px; writing-mode: vertical-rl; 
             font-family: var(--font-body); font-size: 0.85rem; font-weight: 700; color: #666; 
             border-top: 1.5px solid var(--cinnabar); padding-top: 15px; letter-spacing: 0.2em; 
             opacity: 0; pointer-events: none; white-space: nowrap;
         }
 
-        /* --- 3. 长卷渲染器 --- */
+        /* --- 结界长卷区 --- */
         .void-realm { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 1000; transform: translateY(100%); transition: transform 0.6s cubic-bezier(0.2, 0, 0, 1); display: flex; flex-direction: column; }
         .void-realm.active { transform: translateY(0); }
         .realm-bar { height: 60px; width: 100%; display: flex; justify-content: flex-end; align-items: center; padding-right: 20px; z-index: 2000; background: linear-gradient(to bottom, #fff, rgba(255,255,255,0)); }
@@ -87,39 +87,46 @@
         .num-group { text-combine-upright: all; -webkit-text-combine-upright: all; font-family: sans-serif; }
         .colophon-box { font-size: 0.85rem; color: #888; margin-left: 20px; border-right: 1px solid #eee; padding-right: 15px; height: 60%; text-orientation: upright; }
 
-        /* --- 4. 辅助 UI 与工具栏 --- */
+        /* --- 辅助 UI --- */
         .spirit-dot { position: fixed; bottom: 30px; left: 30px; width: 12px; height: 12px; background: var(--cinnabar); border-radius: 50%; z-index: 5000; box-shadow: 0 0 0 4px rgba(194,56,56,0.1); cursor: pointer; transition: 0.3s; }
         .spirit-dot:hover { transform: scale(1.5); }
-        
         .admin-panel { position: fixed; bottom: 0; left: 0; width: 100%; height: 0; background: #fff; z-index: 6000; transition: 0.4s; border-radius: 20px 20px 0 0; overflow: hidden; box-shadow: 0 -10px 30px rgba(0,0,0,0.1); }
         .admin-panel.open { height: 90vh; }
         .form-content { padding: 30px; overflow-y: auto; height: 100%; }
         input, select, textarea { width: 100%; border: none; border-bottom: 1px solid #ccc; padding: 15px 0; margin-bottom: 20px; font-size: 16px; background: transparent; outline: none; border-radius: 0; font-family: var(--font-body); }
         .submit-btn { width: 100%; padding: 15px; background: var(--ink); color: #fff; border: none; font-size: 16px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-bottom: 15px;}
-        
-        /* 新增：富文本快捷工具栏 */
         .toolbar { display: flex; gap: 10px; margin-bottom: 10px; }
-        .tool-btn { 
-            flex: 1; padding: 10px; background: #f5f5f5; border: 1px solid #ddd; 
-            border-radius: 6px; cursor: pointer; color: #333; font-size: 0.9rem; 
-            display: flex; justify-content: center; align-items: center; transition: 0.2s;
-        }
-        .tool-btn:hover { background: #e0e0e0; border-color: #ccc; }
+        .tool-btn { flex: 1; padding: 10px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; color: #333; font-size: 0.9rem; transition: 0.2s; }
+        
+        .morning-trigger { position: fixed; top: 30px; left: 30px; z-index: 4000; writing-mode: vertical-rl; font-weight: 700; font-size: 0.9rem; color: var(--ink); letter-spacing: 0.3em; cursor: pointer; opacity: 0.6; border-right: 2px solid var(--gold); padding-right: 8px; }
+        .morning-panel { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(245, 245, 242, 0.98); z-index: 6500; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: 0.5s; }
+        .morning-panel.active { opacity: 1; pointer-events: auto; }
+        .morning-box { width: 85%; max-width: 400px; text-align: center; }
+        .sleep-options { display: flex; justify-content: space-between; margin-bottom: 30px; }
+        .sleep-btn { flex: 1; margin: 0 5px; background: transparent; border: 1px solid #ccc; color: #666; font-weight: normal; border-radius: 30px; padding: 10px 0; transition: 0.3s; }
+        .sleep-btn.selected { background: var(--gold); color: #fff; border-color: var(--gold); }
 
-        @media screen and (min-width: 768px) {
-            .hero-text { font-size: 6rem; }
-            .fate-mark { right: -60px; font-size: 1rem; }
-            .article-body { height: 65vh; }
+        /* 移动端专属适配 */
+        @media screen and (max-width: 768px) {
+            .hero-text { font-size: 3.8rem; } /* 缩小主标题给副标题让路 */
+            .hero-wrap { transform: translateX(-15px); } /* 调整重心 */
+            .fate-mark { right: -32px; font-size: 0.75rem; } /* 拉近副标题距离 */
+            .article-body { height: 60vh; }
         }
     </style>
 </head>
 <body>
 
-    <div style="position:fixed; top:30px; left:30px; z-index:4000; writing-mode:vertical-rl; font-weight:700; font-size:0.9rem; color:var(--ink); letter-spacing:0.3em; cursor:pointer; opacity:0.6; border-right:2px solid var(--gold); padding-right:8px;" onclick="document.getElementById('morningPanel').classList.toggle('active')">晨省</div>
+    <div class="morning-trigger" onclick="document.getElementById('morningPanel').classList.toggle('active')">晨省</div>
 
-    <div class="morning-panel" id="morningPanel" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(245,245,242,0.98); z-index:6500; display:flex; flex-direction:column; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:0.5s;">
-        <div style="width:85%; max-width:400px; text-align:center;">
+    <div class="morning-panel" id="morningPanel">
+        <div class="morning-box">
             <h2 style="font-family:var(--font-art); font-size:2.5rem; color:var(--gold); margin-bottom:30px;">辰时初刻</h2>
+            <div class="sleep-options">
+                <button class="sleep-btn selected" onclick="selectSleep(this, '酣睡')">酣睡</button>
+                <button class="sleep-btn" onclick="selectSleep(this, '浅梦')">浅梦</button>
+                <button class="sleep-btn" onclick="selectSleep(this, '辗转')">辗转</button>
+            </div>
             <textarea id="mSchedule" style="width:100%; border:1px solid #eee; background:#fff; border-radius:10px; padding:15px; height:120px; resize:none;" placeholder="写下今日日程或心境..."></textarea>
             <button class="submit-btn" style="background:var(--gold); margin-top:20px;" onclick="submitMorning()">存入经卷</button>
             <div style="color:#999; cursor:pointer; margin-top:10px;" onclick="document.getElementById('morningPanel').classList.remove('active')">退下</div>
@@ -160,20 +167,17 @@
     <div class="admin-panel" id="adminPanel">
         <div class="form-content">
             <h3 style="margin-top:0; color:var(--cinnabar); font-family:var(--font-art); font-size:2rem; font-weight:normal;">受箓发布</h3>
-            
             <select id="pTarget">
                 <option value="wangwu">王屋洞天</option>
                 <option value="weiyu">委羽山洞</option>
                 <option value="chisong">赤松遗风</option>
             </select>
             <input id="pTitle" placeholder="标题 / Title">
-            
             <div class="toolbar">
                 <button class="tool-btn" onclick="insertMedia('image')">🖼️ 添图</button>
                 <button class="tool-btn" onclick="insertMedia('video')">🎬 添影</button>
             </div>
-            
-            <textarea id="pBody" rows="10" placeholder="在此书写正文。&#10;点击上方按钮可快速插入图影。"></textarea>
+            <textarea id="pBody" rows="10" placeholder="在此书写正文。&#10;支持 Markdown 语法与图文混排。"></textarea>
             <input id="pColophon" placeholder="题跋批注 (可选)">
             <button class="submit-btn" onclick="publish()">发布至云端</button>
             <div style="text-align:center; color:#999; cursor:pointer;" onclick="toggleAdmin()">收起法简</div>
@@ -185,28 +189,20 @@
         const SUPABASE_URL = 'https://mctqfattznybghuobqum.supabase.co'; 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jdHFmYXR0em55YmdodW9icXVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3NjUwMDQsImV4cCI6MjA4NzM0MTAwNH0.ma30ugPfjQWmQUELCOiRxc0bI_w0ky-yGykhrzIdefQ';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        marked.setOptions({ breaks: true });
+        
+        // --- 安全的解析配置 ---
+        if (typeof marked !== 'undefined') {
+            marked.setOptions({ breaks: true });
+        }
 
-        // --- 快捷插入工具 (富文本体验) ---
         function insertMedia(type) {
             const url = prompt(type === 'image' ? "请输入图片真实链接 (如 https://...jpg)" : "请输入视频真实链接 (如 https://...mp4)");
             if (!url) return;
-            
             const textarea = document.getElementById('pBody');
-            let insertStr = '';
-            
-            // 图片使用原生 Markdown，视频由于兼容性采用安全的 HTML 标签
-            if (type === 'image') {
-                insertStr = `\n\n![画卷](${url})\n\n`;
-            } else {
-                insertStr = `\n\n<video src="${url}" controls playsinline></video>\n\n`;
-            }
-            
-            textarea.value += insertStr;
+            textarea.value += type === 'image' ? `\n\n![画卷](${url})\n\n` : `\n\n<video src="${url}" controls playsinline></video>\n\n`;
             textarea.focus();
         }
 
-        // --- 鼠标灵气感应 (PC 端 Hover 特效) ---
         const dot = document.getElementById('cDot'); 
         const aura = document.getElementById('cAura');
         if (window.matchMedia("(pointer: fine)").matches) {
@@ -214,28 +210,31 @@
                 gsap.to(dot, {x: e.clientX, y: e.clientY, duration: 0.1});
                 gsap.to(aura, {x: e.clientX, y: e.clientY, duration: 0.4});
             });
-            // 靠近洞天时的光晕放大反馈
             document.querySelectorAll('.section').forEach(el => {
                 el.addEventListener('mouseenter', () => gsap.to(aura, { scale: 1.8, opacity: 0.4, borderColor: 'var(--cinnabar)' }));
                 el.addEventListener('mouseleave', () => gsap.to(aura, { scale: 1, opacity: 1, borderColor: 'rgba(0,0,0,0.15)' }));
             });
         }
 
-        // --- 晨省系统 ---
+        let currentSleep = '酣睡';
+        function selectSleep(btn, status) {
+            document.querySelectorAll('.sleep-btn').forEach(el => el.classList.remove('selected'));
+            btn.classList.add('selected'); currentSleep = status;
+        }
+
         async function submitMorning() {
             const scheduleText = document.getElementById('mSchedule').value;
             if(!scheduleText) return alert("请留片语");
             try {
                 const { error } = await _supabase.from('posts').insert([{
                     target: 'chisong', type: 'mixed', title: `晨省`,
-                    body: scheduleText, colophon: new Date().toLocaleDateString('zh-CN-u-ca-chinese')
+                    body: `**眠境**：${currentSleep}\n\n**日程**：\n${scheduleText}`, colophon: new Date().toLocaleDateString('zh-CN-u-ca-chinese')
                 }]);
                 if (error) throw error;
                 alert("晨省已记录。"); document.getElementById('morningPanel').classList.remove('active'); document.getElementById('mSchedule').value = "";
             } catch (err) { alert("失败：" + err.message); }
         }
 
-        // --- 天机命理引擎 ---
         function generateFate() {
             const today = new Date();
             const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
@@ -258,7 +257,6 @@
             gsap.to('.fate-mark', { opacity: 0.8, y: -10, duration: 1.5, stagger: 0.3, ease: "power2.out", delay: 0.5 });
         }
 
-        // --- 长卷读取 ---
         async function enterRealm(id) {
             const track = document.getElementById('infiniteTrack');
             track.innerHTML = '<div class="content-card">正在调取云端经卷...</div>';
@@ -272,7 +270,15 @@
                 track.onwheel = (e) => { if(e.deltaY!==0){e.preventDefault(); track.scrollLeft+=e.deltaY;} };
 
                 data.forEach(item => {
-                    let mdHtml = marked.parse(item.body || '');
+                    // 核心修复 3：加入解析库防崩逻辑
+                    let mdHtml = '';
+                    if (typeof marked !== 'undefined') {
+                        mdHtml = marked.parse(item.body || '');
+                    } else {
+                        // 如果网络拦截了 marked，自动降级为纯文本换行显示，保证内容依然可用
+                        mdHtml = (item.body || '').replace(/\n/g, '<br>');
+                    }
+                    
                     mdHtml = mdHtml.replace(/\b(\d{2,4})\b/g, '<span class="num-group">$1</span>');
                     
                     if (item.media) {
@@ -286,10 +292,12 @@
 
                 const date = new Date().toLocaleDateString('zh-CN-u-ca-chinese');
                 track.innerHTML += `<div class="content-card" style="padding-right: 5vw;"><div style="font-weight:bold; color:#999; letter-spacing:2px; writing-mode:vertical-rl;">${date}<br>道人 敬书<br><div style="width:30px; height:30px; border:1px solid #ccc; margin-top:20px; line-height:30px; text-align:center;">印</div></div></div>`;
-            } catch (err) { track.innerHTML = `<div class="content-card">天机受阻：${err.message}</div>`; }
+            } catch (err) { 
+                console.error(err);
+                track.innerHTML = `<div class="content-card">天机受阻：<br>网络连接超时或节点被拦截。<br>请检查网络或稍后重试。</div>`; 
+            }
         }
 
-        // --- 自由流发布 ---
         async function publish() {
             const title = document.getElementById('pTitle').value;
             if(!title) return alert("标题不能为空");
