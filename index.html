@@ -8,126 +8,149 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;700;900&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --void-bg: #f5f5f2; 
-            --ink: #0a0a0a;
-            --cinnabar: #c23838; 
-            --gold: #bfa46f;
+            --void-bg: #f5f5f2; --ink: #0a0a0a; --cinnabar: #c23838; --gold: #bfa46f;
             --font-art: 'Ma Shan Zheng', 'STKaiti', cursive;
             --font-body: 'Noto Serif SC', 'Songti SC', serif;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        
-        body, html { 
-            margin: 0; padding: 0; background: var(--void-bg); 
-            height: 100%; width: 100%; overflow: hidden; font-family: var(--font-body);
-        }
+        body, html { margin: 0; padding: 0; background: var(--void-bg); height: 100%; width: 100%; overflow: hidden; font-family: var(--font-body); }
 
-        /* --- 1. 首页：纵向滚动与排版 --- */
-        .main-scroll {
-            height: 100vh; width: 100%; overflow-y: scroll; scroll-snap-type: y mandatory;
-            position: relative; z-index: 10;
-        }
+        /* --- 1. 首页排版防撞修复 --- */
+        .main-scroll { height: 100vh; width: 100%; overflow-y: scroll; scroll-snap-type: y mandatory; position: relative; z-index: 10; }
         .main-scroll::-webkit-scrollbar { display: none; }
+        .section { height: 100vh; width: 100%; scroll-snap-align: center; display: flex; justify-content: center; align-items: center; position: relative; }
+        
+        /* 容器包裹，确保相对位置 */
+        .hero-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
 
-        .section {
-            height: 100vh; width: 100%; scroll-snap-align: center;
-            display: flex; justify-content: center; align-items: center; position: relative;
-        }
-
-        /* 恢复灵动的细体书法 */
         .hero-text {
-            writing-mode: vertical-rl;
-            font-family: var(--font-art);
-            font-size: 5.5rem; 
-            font-weight: 400; /* 去除加粗，恢复瘦硬骨感 */
-            letter-spacing: 0.2em;
-            color: var(--ink);
-            cursor: pointer; transition: 0.3s; z-index: 20;
-            margin: 0; padding: 0;
+            writing-mode: vertical-rl; font-family: var(--font-art); font-size: 5.5rem; 
+            font-weight: 400; letter-spacing: 0.2em; color: var(--ink);
+            cursor: pointer; transition: 0.3s; z-index: 20; margin: 0;
             text-shadow: 2px 2px 10px rgba(0,0,0,0.03);
         }
         .hero-text:active { transform: scale(0.95); color: var(--cinnabar); }
 
-        /* 命理签语样式 */
+        /* 改为相对绝对定位，依附于 hero-wrap，绝不重叠 */
         .fate-mark {
-            position: absolute; top: 20%; left: 55%;
-            writing-mode: vertical-rl;
-            font-family: var(--font-body);
-            font-size: 0.85rem; font-weight: 700; color: #666;
-            border-top: 2px solid var(--cinnabar); padding-top: 15px;
-            letter-spacing: 0.25em;
-            opacity: 0; /* 初始隐藏，由动画接管 */
-            pointer-events: none;
+            position: absolute; right: -50px; /* 永远在主标题左侧(竖排的右侧)50px处 */
+            writing-mode: vertical-rl; font-family: var(--font-body); font-size: 0.85rem; 
+            font-weight: 700; color: #666; border-top: 2px solid var(--cinnabar); 
+            padding-top: 15px; letter-spacing: 0.25em; opacity: 0; pointer-events: none;
+            white-space: nowrap;
         }
 
-        .bg-seal { position: absolute; width: 55vw; height: 55vw; opacity: 0.04; z-index: 1; fill: var(--ink); mix-blend-mode: multiply; pointer-events: none; }
+        .bg-seal { position: absolute; width: 50vw; height: 50vw; max-width: 400px; max-height: 400px; opacity: 0.04; z-index: 1; fill: var(--ink); mix-blend-mode: multiply; pointer-events: none; }
 
-        /* --- 2. 二级结界：横向长卷 --- */
-        .void-realm {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #fff; z-index: 1000;
-            transform: translateY(100%); transition: transform 0.6s cubic-bezier(0.2, 0, 0, 1);
-            display: flex; flex-direction: column;
-        }
+        /* --- 2. 长卷“露角”与间距优化 --- */
+        .void-realm { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 1000; transform: translateY(100%); transition: transform 0.6s cubic-bezier(0.2, 0, 0, 1); display: flex; flex-direction: column; }
         .void-realm.active { transform: translateY(0); }
-
         .realm-bar { height: 60px; width: 100%; display: flex; justify-content: flex-end; align-items: center; padding-right: 20px; z-index: 2000; background: linear-gradient(to bottom, #fff, rgba(255,255,255,0)); }
         .close-btn { font-size: 1.5rem; color: #999; cursor: pointer; padding: 10px; }
-
-        .infinite-track {
-            flex: 1; display: flex; overflow-x: auto; overflow-y: hidden;
-            -webkit-overflow-scrolling: touch; padding-left: 20px;
-            background: linear-gradient(90deg, #fff 0%, #fcfcf9 100%);
+        
+        .infinite-track { 
+            flex: 1; display: flex; overflow-x: auto; overflow-y: hidden; 
+            -webkit-overflow-scrolling: touch; padding-left: 5vw; 
+            background: linear-gradient(90deg, #fff 0%, #fcfcf9 100%); 
         }
 
-        .content-card { height: 100%; min-width: 85vw; display: flex; align-items: center; justify-content: center; writing-mode: vertical-rl; padding: 40px 20px; border-right: 1px dashed #eee; flex-shrink: 0; }
-        
-        .article-title { font-family: var(--font-body); font-size: 2rem; font-weight: 900; margin-left: 20px; border-left: 4px solid var(--cinnabar); padding-left: 15px; color: #222; }
-        .article-body { font-family: var(--font-body); font-size: 1.1rem; line-height: 2; color: #333; height: 70%; text-align: justify; white-space: pre-wrap; margin-left: 25px; }
-        
-        .num-group { text-combine-upright: all; -webkit-text-combine-upright: all; font-family: sans-serif; }
-        .media-container { max-height: 50vh; max-width: 75vw; box-shadow: 5px 5px 20px rgba(0,0,0,0.1); border: 6px solid #fff; outline: 1px solid #eee; margin: 0 30px; background: #000; display: block; }
-        .colophon-box { font-size: 0.8rem; color: #999; margin-left: 40px; border-right: 1px solid #eee; padding-right: 10px; height: 60%; }
+        /* 修复假死：宽度自适应，卡片紧凑，右侧虚线分隔 */
+        .content-card { 
+            height: 100%; width: max-content; /* 让内容决定宽度 */
+            display: flex; align-items: center; justify-content: flex-start; 
+            writing-mode: vertical-rl; padding: 30px 20px; 
+            border-right: 1px dashed #ddd; flex-shrink: 0; 
+        }
 
-        /* --- 3. 后台 UI --- */
+        .article-title { font-family: var(--font-body); font-size: 2rem; font-weight: 900; margin-left: 20px; border-left: 4px solid var(--cinnabar); padding-left: 15px; color: #222; }
+        
+        .article-body { 
+            font-family: var(--font-body); font-size: 1.1rem; line-height: 2.2; 
+            color: #333; height: 75%; text-align: justify; white-space: pre-wrap; 
+            margin-left: 20px; margin-right: 10px;
+        }
+        .article-body p { margin: 0; }
+        
+        /* 智能多媒体容器 */
+        .gallery-frame { 
+            max-height: 50vh; max-width: 70vw; 
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.08); 
+            border: 4px solid #fff; outline: 1px solid #eee; 
+            margin: 0 15px; background: #000; display: block; object-fit: contain;
+        }
+
+        .num-group { text-combine-upright: all; -webkit-text-combine-upright: all; font-family: sans-serif; }
+        .colophon-box { font-size: 0.8rem; color: #999; margin-left: 20px; border-right: 1px solid #eee; padding-right: 10px; height: 60%; }
+
+        /* --- 3. 后台极简 UI --- */
         .spirit-dot { position: fixed; bottom: 30px; left: 30px; width: 12px; height: 12px; background: var(--cinnabar); border-radius: 50%; z-index: 5000; box-shadow: 0 0 0 4px rgba(194,56,56,0.1); cursor: pointer; }
         .admin-panel { position: fixed; bottom: 0; left: 0; width: 100%; height: 0; background: #fff; z-index: 6000; transition: 0.4s; border-radius: 20px 20px 0 0; overflow: hidden; box-shadow: 0 -10px 30px rgba(0,0,0,0.1); }
-        .admin-panel.open { height: 85vh; }
+        .admin-panel.open { height: 90vh; }
         .form-content { padding: 30px; overflow-y: auto; height: 100%; }
-        input, select, textarea { width: 100%; border: none; border-bottom: 1px solid #ccc; padding: 15px 0; margin-bottom: 20px; font-size: 16px; background: transparent; outline: none; border-radius: 0; }
-        button { width: 100%; padding: 15px; background: var(--ink); color: #fff; border: none; font-size: 16px; border-radius: 4px; font-weight: bold; }
+        input, select, textarea { width: 100%; border: none; border-bottom: 1px solid #ccc; padding: 15px 0; margin-bottom: 20px; font-size: 16px; background: transparent; outline: none; border-radius: 0; font-family: var(--font-body); }
+        button { width: 100%; padding: 15px; background: var(--ink); color: #fff; border: none; font-size: 16px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-bottom: 15px;}
+        
+        /* 晨省 */
+        .morning-trigger { position: fixed; top: 30px; left: 30px; z-index: 4000; writing-mode: vertical-rl; font-weight: 700; font-size: 0.9rem; color: var(--ink); letter-spacing: 0.3em; cursor: pointer; opacity: 0.6; border-right: 2px solid var(--gold); padding-right: 8px; }
+        .morning-panel { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(245, 245, 242, 0.98); z-index: 6500; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: 0.5s; }
+        .morning-panel.active { opacity: 1; pointer-events: auto; }
+        .morning-box { width: 85%; max-width: 400px; text-align: center; }
+        .sleep-options { display: flex; justify-content: space-between; margin-bottom: 30px; }
+        .sleep-btn { flex: 1; margin: 0 5px; background: transparent; border: 1px solid #ccc; color: #666; font-weight: normal; border-radius: 30px; padding: 10px 0; transition: 0.3s; }
+        .sleep-btn.selected { background: var(--gold); color: #fff; border-color: var(--gold); }
 
         @media screen and (min-width: 768px) {
             .hero-text { font-size: 7.5rem; }
-            .content-card { min-width: 50vw; }
-            .fate-mark { left: 52%; font-size: 1rem; }
-            .bg-seal { width: 40vh; height: 40vh; }
+            .fate-mark { right: -70px; font-size: 1rem; }
+            .article-body { height: 60%; }
         }
     </style>
 </head>
 <body>
 
+    <div class="morning-trigger" onclick="toggleMorning()">晨省</div>
+
+    <div class="morning-panel" id="morningPanel">
+        <div class="morning-box">
+            <h2 style="font-family:var(--font-art); font-size:2.5rem; color:var(--gold); margin-bottom:10px;">辰时初刻</h2>
+            <p style="font-size:0.9rem; color:#666; margin-bottom:30px; letter-spacing:2px;">昨夜安睡否？今日何所期？</p>
+            <div class="sleep-options" id="sleepOptions">
+                <button class="sleep-btn selected" onclick="selectSleep(this, '酣睡')">酣睡</button>
+                <button class="sleep-btn" onclick="selectSleep(this, '浅梦')">浅梦</button>
+                <button class="sleep-btn" onclick="selectSleep(this, '辗转')">辗转</button>
+            </div>
+            <textarea id="mSchedule" style="border:1px solid #eee; background:#fff; border-radius:10px; padding:15px; height:120px; resize:none; text-align:left;" placeholder="写下今日的核心日程或心境..."></textarea>
+            <button style="background:var(--gold);" onclick="submitMorning()">存入经卷</button>
+            <div style="margin-top:10px; color:#999; cursor:pointer;" onclick="toggleMorning()">退下</div>
+        </div>
+    </div>
+
     <div class="main-scroll">
         <section class="section">
             <svg class="bg-seal" viewBox="0 0 100 100"><rect x="25" y="25" width="50" height="50" transform="rotate(45 50 50)" /></svg>
-            <div class="hero-text" onclick="enterRealm('wangwu')">王屋洞天</div>
-            <div class="fate-mark" id="fate-wangwu"></div>
+            <div class="hero-wrap">
+                <div class="hero-text" onclick="enterRealm('wangwu')">王屋洞天</div>
+                <div class="fate-mark" id="fate-wangwu"></div>
+            </div>
         </section>
         <section class="section">
             <svg class="bg-seal" viewBox="0 0 100 100"><circle cx="50" cy="50" r="30" /></svg>
-            <div class="hero-text" onclick="enterRealm('weiyu')">委羽山洞</div>
-            <div class="fate-mark" id="fate-weiyu"></div>
+            <div class="hero-wrap">
+                <div class="hero-text" onclick="enterRealm('weiyu')">委羽山洞</div>
+                <div class="fate-mark" id="fate-weiyu"></div>
+            </div>
         </section>
         <section class="section">
             <svg class="bg-seal" viewBox="0 0 100 100"><path d="M50,20 L80,80 L20,80 Z" /></svg>
-            <div class="hero-text" onclick="enterRealm('chisong')">赤松遗风</div>
-            <div class="fate-mark" id="fate-chisong"></div>
+            <div class="hero-wrap">
+                <div class="hero-text" onclick="enterRealm('chisong')">赤松遗风</div>
+                <div class="fate-mark" id="fate-chisong"></div>
+            </div>
         </section>
     </div>
 
@@ -140,68 +163,106 @@
 
     <div class="admin-panel" id="adminPanel">
         <div class="form-content">
-            <h3 style="margin-top:0; color:var(--cinnabar);">受箓发布</h3>
+            <h3 style="margin-top:0; color:var(--cinnabar); font-family:var(--font-art); font-size:2rem; font-weight:normal;">自由流发布</h3>
+            <p style="font-size:0.8rem; color:#666; margin-top:-10px;">*无需选类型。在正文中，只需另起一行粘贴图片或视频链接，系统会自动识别排版。</p>
+            
             <select id="pTarget">
                 <option value="wangwu">王屋洞天</option>
                 <option value="weiyu">委羽山洞</option>
                 <option value="chisong">赤松遗风</option>
             </select>
-            <select id="pType" onchange="toggleFields()">
-                <option value="article">文章</option>
-                <option value="image">图文</option>
-                <option value="video">视频</option>
-            </select>
-            <input id="pTitle" placeholder="标题">
-            <input id="pMedia" placeholder="图片/视频链接" style="display:none;">
-            <textarea id="pBody" rows="5" placeholder="正文内容..."></textarea>
-            <input id="pColophon" placeholder="题跋 (可选)">
+            <input id="pTitle" placeholder="标题 / Title">
+            
+            <textarea id="pBody" rows="10" placeholder="在此书写正文。&#10;&#10;若需插入图片或视频，请新起一行，直接粘贴 URL 链接即可（支持 .jpg .png .mp4 等）。"></textarea>
+            
+            <input id="pColophon" placeholder="题跋批注 (可选)">
             <button onclick="publish()">发布</button>
-            <div style="text-align:center; margin-top:20px; color:#999;" onclick="toggleAdmin()">收起</div>
+            <div style="text-align:center; color:#999; cursor:pointer;" onclick="toggleAdmin()">收起</div>
         </div>
     </div>
 
     <script>
-        // --- 填写你的 Supabase Key ---
+        // --- 核心配置 ---
         const SUPABASE_URL = 'https://mctqfattznybghuobqum.supabase.co'; 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jdHFmYXR0em55YmdodW9icXVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3NjUwMDQsImV4cCI6MjA4NzM0MTAwNH0.ma30ugPfjQWmQUELCOiRxc0bI_w0ky-yGykhrzIdefQ';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // --- 天机命理引擎 (自动化算卦体系) ---
+        // --- 智能排版解析器 (The Magic Parser) ---
+        function parseSmartContent(text) {
+            if(!text) return '';
+            const lines = text.split('\n');
+            let html = '<div class="article-body">';
+            
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                if (!trimmed) return;
+                
+                // 自动识别图片
+                if (trimmed.match(/^https?:\/\/.*\.(jpg|jpeg|png|gif|webp|svg)/i)) {
+                    html += `</div><img src="${trimmed}" class="gallery-frame"><div class="article-body">`;
+                } 
+                // 自动识别视频
+                else if (trimmed.match(/^https?:\/\/.*\.(mp4|webm|mov)/i)) {
+                    html += `</div><video src="${trimmed}" controls class="gallery-frame" playsinline></video><div class="article-body">`;
+                } 
+                // 普通文字 (处理数字组合)
+                else {
+                    const parsedText = trimmed.replace(/\b(\d{2,4})\b/g, '<span class="num-group">$1</span>');
+                    html += `<p>${parsedText}</p>`;
+                }
+            });
+            
+            html += '</div>';
+            // 清理多余的空容器
+            return html.replace(/<div class="article-body"><\/div>/g, '');
+        }
+
+        // --- 晨省系统 ---
+        let currentSleep = '酣睡';
+        function toggleMorning() { document.getElementById('morningPanel').classList.toggle('active'); }
+        function selectSleep(btn, status) {
+            document.querySelectorAll('.sleep-btn').forEach(el => el.classList.remove('selected'));
+            btn.classList.add('selected'); currentSleep = status;
+        }
+        async function submitMorning() {
+            const scheduleText = document.getElementById('mSchedule').value;
+            try {
+                const { error } = await _supabase.from('posts').insert([{
+                    target: 'chisong', 
+                    type: 'article', // 保留此字段以防数据库报错，但前端不再依赖它
+                    title: `晨省`,
+                    body: `【眠境】${currentSleep}\n\n【日程】\n${scheduleText || '无事挂心头。'}`,
+                    colophon: new Date().toLocaleDateString('zh-CN-u-ca-chinese')
+                }]);
+                if (error) throw error;
+                alert("晨省已记录。"); toggleMorning(); document.getElementById('mSchedule').value = "";
+            } catch (err) { alert("失败：" + err.message); }
+        }
+
+        // --- 天机命理引擎 ---
         function generateFate() {
             const today = new Date();
-            // 基于年月日生成当天的唯一数字种子
             const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-            
-            // 天干地支计算 (2026是丙午年)
             const stems = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
             const branches = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
-            const stem = stems[(today.getFullYear() - 4) % 10];
-            const branch = branches[(today.getFullYear() - 4) % 12];
-            const lunarYear = `${stem}${branch}年`;
+            const lunarYear = `${stems[(today.getFullYear() - 4) % 10]}${branches[(today.getFullYear() - 4) % 12]}年`;
 
-            // 三界专属词库
             const fateDict = {
-                wangwu: { yi: ["静思", "赏画", "观云", "抚琴", "冥想"], ji: ["喧哗", "动怒", "远行"] }, // 艺术/心境
-                weiyu: { yi: ["推演", "读书", "破局", "复盘", "论道"], ji: ["盲从", "怠惰", "杂念"] },  // 逻辑/数理
-                chisong: { yi: ["修行", "造物", "会友", "漫步", "修身"], ji: ["熬夜", "争执", "止步"] }   // 实践/生活
+                wangwu: { yi: ["静思", "赏画", "观云", "冥想"], ji: ["喧哗", "动怒"] },
+                weiyu: { yi: ["推演", "读书", "破局", "复盘"], ji: ["盲从", "怠惰"] },
+                chisong: { yi: ["修行", "造物", "漫步", "修身"], ji: ["熬夜", "争执"] }
             };
 
-            // 给三个洞天挂载今日签语
             ['wangwu', 'weiyu', 'chisong'].forEach(realm => {
                 const yiWord = fateDict[realm].yi[seed % fateDict[realm].yi.length];
                 const jiWord = fateDict[realm].ji[(seed * 2) % fateDict[realm].ji.length];
                 document.getElementById(`fate-${realm}`).innerText = `${lunarYear} · 宜${yiWord} · 忌${jiWord}`;
             });
 
-            // GSAP 缓动入场动画
             gsap.to('.fate-mark', { opacity: 0.8, y: -10, duration: 1.5, stagger: 0.3, ease: "power2.out", delay: 0.5 });
         }
 
-        function formatText(text) {
-            if(!text) return '';
-            return text.replace(/\b(\d{2,4})\b/g, '<span class="num-group">$1</span>');
-        }
-
+        // --- 长卷读取 ---
         async function enterRealm(id) {
             const track = document.getElementById('infiniteTrack');
             track.innerHTML = '<div class="content-card">正在调取云端经卷...</div>';
@@ -215,30 +276,40 @@
                 track.onwheel = (e) => { if(e.deltaY!==0){e.preventDefault(); track.scrollLeft+=e.deltaY;} };
 
                 data.forEach(item => {
-                    let bodyHtml = formatText(item.body);
-                    let mediaHtml = item.type === 'image' ? `<img src="${item.media}" class="media-container">` : 
-                                    (item.type === 'video' ? `<video src="${item.media}" controls class="media-container" playsinline></video>` : '');
-                    let colophonHtml = item.colophon ? `<div class="colophon-box">${formatText(item.colophon)}</div>` : '';
+                    // 调用智能解析器
+                    let smartHtml = parseSmartContent(item.body);
+                    // 兼容旧数据的单独图片链接
+                    if(item.media) {
+                        if(item.media.match(/\.(mp4|webm|mov)/i)) smartHtml += `<video src="${item.media}" controls class="gallery-frame" playsinline></video>`;
+                        else smartHtml += `<img src="${item.media}" class="gallery-frame">`;
+                    }
 
-                    track.innerHTML += `<div class="content-card"><h2 class="article-title">${item.title}</h2>${mediaHtml}<div class="article-body">${bodyHtml}</div>${colophonHtml}</div>`;
+                    let colophonHtml = item.colophon ? `<div class="colophon-box">${item.colophon.replace(/\b(\d{2,4})\b/g, '<span class="num-group">$1</span>')}</div>` : '';
+
+                    track.innerHTML += `<div class="content-card"><h2 class="article-title">${item.title}</h2>${smartHtml}${colophonHtml}</div>`;
                 });
 
                 const date = new Date().toLocaleDateString('zh-CN-u-ca-chinese');
-                track.innerHTML += `<div class="content-card" style="justify-content:center; min-width:40vw;"><div style="font-weight:bold; color:#999; letter-spacing:2px; writing-mode:vertical-rl;">${date}<br>青云道人 敬书<br><div style="width:30px; height:30px; border:1px solid #ccc; margin-top:20px; line-height:30px; text-align:center;">印</div></div></div>`;
+                track.innerHTML += `<div class="content-card" style="padding-right: 5vw;"><div style="font-weight:bold; color:#999; letter-spacing:2px; writing-mode:vertical-rl;">${date}<br>道人 敬书<br><div style="width:30px; height:30px; border:1px solid #ccc; margin-top:20px; line-height:30px; text-align:center;">印</div></div></div>`;
             } catch (err) { track.innerHTML = `<div class="content-card">天机受阻：${err.message}</div>`; }
         }
 
+        // --- 自由流发布 ---
         async function publish() {
             const title = document.getElementById('pTitle').value;
             if(!title) return alert("标题不能为空");
             try {
                 const { error } = await _supabase.from('posts').insert([{
-                    target: document.getElementById('pTarget').value, type: document.getElementById('pType').value,
-                    title: title, body: document.getElementById('pBody').value, media: document.getElementById('pMedia').value, colophon: document.getElementById('pColophon').value
+                    target: document.getElementById('pTarget').value, 
+                    type: 'mixed', // 统一存为混合类型
+                    title: title, 
+                    body: document.getElementById('pBody').value, 
+                    media: '', // 媒体链接现在直接放在 body 里了，这个字段置空
+                    colophon: document.getElementById('pColophon').value
                 }]);
                 if (error) throw error;
                 alert("发布成功"); toggleAdmin();
-                document.getElementById('pTitle').value = ""; document.getElementById('pBody').value = ""; document.getElementById('pMedia').value = ""; document.getElementById('pColophon').value = "";
+                document.getElementById('pTitle').value = ""; document.getElementById('pBody').value = ""; document.getElementById('pColophon').value = "";
             } catch (err) { alert("发布失败：" + err.message); }
         }
 
@@ -250,13 +321,8 @@
             document.getElementById('adminPanel').classList.toggle('open'); 
         }
         function closeRealm() { document.getElementById('voidRealm').classList.remove('active'); }
-        function toggleFields() { const t = document.getElementById('pType').value; document.getElementById('pMedia').style.display = (t === 'image' || t === 'video') ? 'block' : 'none'; }
 
-        // 页面加载完毕后，触发天机计算
-        window.onload = () => { 
-            toggleFields(); 
-            generateFate(); // 挂载命理签语
-        };
+        window.onload = () => { generateFate(); };
     </script>
 </body>
 </html>
